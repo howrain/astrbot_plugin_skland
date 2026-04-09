@@ -29,7 +29,7 @@ from .skland_api import SklandAPI
 PLUGIN_NAME = "astrbot_plugin_skland"
 
 
-@register(PLUGIN_NAME, "AstrBot", "森空岛自动签到与基础查询插件", "2.0.2")
+@register(PLUGIN_NAME, "AstrBot", "森空岛自动签到与基础查询插件", "2.0.3")
 class SklandPlugin(Star):
     def __init__(self, context: Context, config: AstrBotConfig):
         super().__init__(context)
@@ -254,10 +254,19 @@ class SklandPlugin(Star):
             return f"https://web.hycdn.cn/arknights/game/assets/avatar/{avatar_id}.png"
         return f"https://web.hycdn.cn/arknights/game/assets/char_skin/avatar/{avatar_id}.png"
 
-    def _build_account(self, event: AstrMessageEvent, token: str, cred: str, nickname: str, login_type: str) -> dict:
+    def _build_account(
+        self,
+        event: AstrMessageEvent,
+        token: str,
+        cred: str,
+        cred_token: str,
+        nickname: str,
+        login_type: str,
+    ) -> dict:
         return {
             "token": token,
             "cred": cred,
+            "cred_token": cred_token,
             "nickname": nickname,
             "last_username": event.get_sender_name(),
             "last_sign": {},
@@ -273,15 +282,18 @@ class SklandPlugin(Star):
         token: str,
         login_type: str = "token",
         cred: str = "",
+        cred_token: str = "",
     ) -> str:
         results, nickname = await self.api.do_full_sign_in(token)
-        if not cred:
+        if not cred or not cred_token:
             try:
                 generated = await self.api.get_credential_from_token(token)
                 cred = generated.cred
+                cred_token = generated.token
             except Exception:
                 cred = ""
-        account = self._build_account(event, token, cred, nickname, login_type)
+                cred_token = ""
+        account = self._build_account(event, token, cred, cred_token, nickname, login_type)
         self._update_account_after_sign(account, results, nickname, event.get_sender_name())
         await self.storage.bind_or_replace_primary_account(event.get_sender_id(), account)
         return self._format_sign_status(results, nickname)
@@ -730,7 +742,7 @@ class SklandPlugin(Star):
                 if account and account.get("token"):
                     try:
                         player = await self.api.get_arknights_player_info(
-                            account["token"], account.get("cred", "")
+                            account["token"], account.get("cred", ""), account.get("cred_token", "")
                         )
                         mark_map, class_map = self._build_recruit_marks(player.get("data", {}) or {})
                     except Exception as exc:
@@ -788,7 +800,9 @@ class SklandPlugin(Star):
             return
 
         try:
-            player = await self.api.get_arknights_player_info(account["token"], account.get("cred", ""))
+            player = await self.api.get_arknights_player_info(
+                account["token"], account.get("cred", ""), account.get("cred_token", "")
+            )
             player_data = player.get("data", {})
         except Exception as exc:
             logger.error(
@@ -808,7 +822,9 @@ class SklandPlugin(Star):
             routine = player_data.get("routine", {})
             campaign = player_data.get("campaign", {})
             try:
-                cards = await self.api.get_game_cards(account["token"], account.get("cred", ""))
+                cards = await self.api.get_game_cards(
+                    account["token"], account.get("cred", ""), account.get("cred_token", "")
+                )
                 card_data = ((cards.get("data", {}) or {}).get("list", [{}])[0] or {}).get("arknights", {})
             except Exception as exc:
                 logger.warning(f"[Skland][便签] 获取游戏卡片失败 user={event.get_sender_id()}: {exc}")
@@ -987,7 +1003,9 @@ class SklandPlugin(Star):
 
         if action in {"抽卡记录", "寻访记录"}:
             try:
-                binding = await self.api.get_arknights_binding(account["token"], account.get("cred", ""))
+                binding = await self.api.get_arknights_binding(
+                    account["token"], account.get("cred", ""), account.get("cred_token", "")
+                )
                 if not binding:
                     yield event.plain_result("未找到明日方舟绑定信息。")
                     return
@@ -1037,7 +1055,9 @@ class SklandPlugin(Star):
 
         if action in {"抽卡分析", "寻访分析", "抽卡统计", "寻访统计"}:
             try:
-                binding = await self.api.get_arknights_binding(account["token"], account.get("cred", ""))
+                binding = await self.api.get_arknights_binding(
+                    account["token"], account.get("cred", ""), account.get("cred_token", "")
+                )
                 if not binding:
                     yield event.plain_result("未找到明日方舟绑定信息。")
                     return

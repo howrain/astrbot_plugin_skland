@@ -144,6 +144,7 @@ class StorageService:
                     changed = True
                 norm_account.setdefault("bound_at", raw.get("bound_at") or datetime.now().isoformat())
                 norm_account.setdefault("last_sign", {})
+                norm_account.setdefault("cred_token", "")
                 normalized_accounts.append(norm_account)
             primary_id = raw.get("primary_account_id")
             if normalized_accounts and not primary_id:
@@ -159,6 +160,7 @@ class StorageService:
             "id": uuid.uuid4().hex,
             "token": raw.get("token", ""),
             "cred": raw.get("cred", ""),
+            "cred_token": raw.get("cred_token", ""),
             "nickname": raw.get("nickname", ""),
             "last_username": raw.get("last_username", ""),
             "last_sign": deepcopy(raw.get("last_sign", {})),

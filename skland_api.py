@@ -18,7 +18,10 @@ from urllib.parse import urlparse
 
 import httpx
 
-logger = logging.getLogger("skland_api")
+try:
+    from astrbot.api import logger as logger
+except Exception:
+    logger = logging.getLogger("skland_api")
 from Crypto.Cipher import AES, DES, PKCS1_v1_5
 from Crypto.PublicKey import RSA
 from Crypto.Util.Padding import pad
@@ -443,15 +446,15 @@ class SklandAPI:
         auth_code = await self.get_authorization(user_token)
         return await self.get_credential(auth_code)
 
-    async def _resolve_credential(self, user_token: str, stored_cred: str = "") -> Credential:
-        if stored_cred:
-            return Credential(token=user_token, cred=stored_cred)
+    async def _resolve_credential(self, user_token: str, stored_cred: str = "", stored_cred_token: str = "") -> Credential:
+        if stored_cred and stored_cred_token:
+            return Credential(token=stored_cred_token, cred=stored_cred)
         return await self.get_credential_from_token(user_token)
 
-    async def _call_with_credential_fallback(self, user_token: str, stored_cred: str, operation, op_name: str):
-        if stored_cred:
+    async def _call_with_credential_fallback(self, user_token: str, stored_cred: str, stored_cred_token: str, operation, op_name: str):
+        if stored_cred and stored_cred_token:
             try:
-                return await operation(Credential(token=user_token, cred=stored_cred))
+                return await operation(Credential(token=stored_cred_token, cred=stored_cred))
             except Exception as exc:
                 logger.warning(f"[SklandAPI] {op_name}: 已存 cred 调用失败，回退 token 刷新: {exc}")
         try:
@@ -461,16 +464,17 @@ class SklandAPI:
             logger.error(f"[SklandAPI] {op_name}: token 刷新 cred 后仍失败: {exc}")
             raise
 
-    async def get_user_bindings(self, user_token: str, stored_cred: str = "") -> list[UserBinding]:
+    async def get_user_bindings(self, user_token: str, stored_cred: str = "", stored_cred_token: str = "") -> list[UserBinding]:
         return await self._call_with_credential_fallback(
             user_token,
             stored_cred,
+            stored_cred_token,
             self.get_binding_list,
             "get_user_bindings",
         )
 
-    async def get_arknights_binding(self, user_token: str, stored_cred: str = "") -> UserBinding | None:
-        bindings = await self.get_user_bindings(user_token, stored_cred)
+    async def get_arknights_binding(self, user_token: str, stored_cred: str = "", stored_cred_token: str = "") -> UserBinding | None:
+        bindings = await self.get_user_bindings(user_token, stored_cred, stored_cred_token)
         for binding in bindings:
             if binding.app_code == "arknights":
                 return binding
@@ -484,7 +488,7 @@ class SklandAPI:
             raise Exception(response.get("message", "Unknown error"))
         return response
 
-    async def get_arknights_player_info(self, user_token: str, stored_cred: str = "") -> dict:
+    async def get_arknights_player_info(self, user_token: str, stored_cred: str = "", stored_cred_token: str = "") -> dict:
         async def _fetch(cred: Credential):
             bindings = await self.get_binding_list(cred)
             binding = next((item for item in bindings if item.app_code == "arknights"), None)
@@ -493,14 +497,18 @@ class SklandAPI:
             url = f"https://zonai.skland.com/api/v1/game/player/info?uid={binding.uid}"
             return await self._signed_get_json(url, cred)
 
-        return await self._call_with_credential_fallback(user_token, stored_cred, _fetch, "get_arknights_player_info")
+        return await self._call_with_credential_fallback(
+            user_token, stored_cred, stored_cred_token, _fetch, "get_arknights_player_info"
+        )
 
-    async def get_game_cards(self, user_token: str, stored_cred: str = "") -> dict:
+    async def get_game_cards(self, user_token: str, stored_cred: str = "", stored_cred_token: str = "") -> dict:
         async def _fetch(cred: Credential):
             url = "https://zonai.skland.com/api/v1/game/cards"
             return await self._signed_get_json(url, cred)
 
-        return await self._call_with_credential_fallback(user_token, stored_cred, _fetch, "get_game_cards")
+        return await self._call_with_credential_fallback(
+            user_token, stored_cred, stored_cred_token, _fetch, "get_game_cards"
+        )
 
     async def sign_arknights(self, cred: Credential, binding: UserBinding) -> SignInResult:
         """Sign in for Arknights"""
