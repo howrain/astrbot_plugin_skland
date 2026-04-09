@@ -29,7 +29,7 @@ from .skland_api import SklandAPI
 PLUGIN_NAME = "astrbot_plugin_skland"
 
 
-@register(PLUGIN_NAME, "AstrBot", "森空岛自动签到与基础查询插件", "2.0.1")
+@register(PLUGIN_NAME, "AstrBot", "森空岛自动签到与基础查询插件", "2.0.2")
 class SklandPlugin(Star):
     def __init__(self, context: Context, config: AstrBotConfig):
         super().__init__(context)
@@ -733,7 +733,8 @@ class SklandPlugin(Star):
                             account["token"], account.get("cred", "")
                         )
                         mark_map, class_map = self._build_recruit_marks(player.get("data", {}) or {})
-                    except Exception:
+                    except Exception as exc:
+                        logger.warning(f"[Skland][公招查询] 获取持有标记失败 user={event.get_sender_id()}: {exc}")
                         mark_map, class_map = {}, {}
                 for star in ["6", "5", "4", "1"]:
                     star_data = result.get(star) or {}
@@ -790,6 +791,10 @@ class SklandPlugin(Star):
             player = await self.api.get_arknights_player_info(account["token"], account.get("cred", ""))
             player_data = player.get("data", {})
         except Exception as exc:
+            logger.error(
+                f"[Skland][游戏信息] 获取失败 action={action} user={event.get_sender_id()} "
+                f"has_cred={bool(account.get('cred'))}: {exc}"
+            )
             yield event.plain_result(f"获取游戏信息失败：{exc}")
             return
 
@@ -805,7 +810,8 @@ class SklandPlugin(Star):
             try:
                 cards = await self.api.get_game_cards(account["token"], account.get("cred", ""))
                 card_data = ((cards.get("data", {}) or {}).get("list", [{}])[0] or {}).get("arknights", {})
-            except Exception:
+            except Exception as exc:
+                logger.warning(f"[Skland][便签] 获取游戏卡片失败 user={event.get_sender_id()}: {exc}")
                 card_data = {}
             lines = [
                 f"博士：{status.get('name', account.get('nickname', '未知'))}",
@@ -1022,6 +1028,10 @@ class SklandPlugin(Star):
                     return
                 yield event.plain_result("\n".join(lines))
             except Exception as exc:
+                logger.error(
+                    f"[Skland][抽卡记录] 获取失败 user={event.get_sender_id()} pool={extra or '-'} "
+                    f"has_cred={bool(account.get('cred'))}: {exc}"
+                )
                 yield event.plain_result(f"获取抽卡记录失败：{exc}")
             return
 
@@ -1057,6 +1067,10 @@ class SklandPlugin(Star):
                     f"评价：{analysis['evaluation']}"
                 )
             except Exception as exc:
+                logger.error(
+                    f"[Skland][抽卡分析] 获取失败 user={event.get_sender_id()} "
+                    f"has_cred={bool(account.get('cred'))}: {exc}"
+                )
                 yield event.plain_result(f"获取抽卡分析失败：{exc}")
             return
 
