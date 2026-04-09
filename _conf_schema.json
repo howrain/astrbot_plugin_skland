@@ -28,5 +28,11 @@
     "type": "int",
     "default": 10,
     "hint": "将限制登录账户的数量，0为不限制"
+  },
+  "render_cache_ttl_seconds": {
+    "description": "渲染缓存保留时长（秒）",
+    "type": "int",
+    "default": 3600,
+    "hint": "render_cache 中图片缓存的保留时长，默认 3600 秒；设置为 0 时，每次渲染前都会尽量清掉所有旧缓存"
   }
 }

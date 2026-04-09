@@ -3,7 +3,7 @@
 # astrbot_plugin_skland
 ### AstrBot 森空岛签到与明日方舟查询插件
 
-[![Build and Release](https://github.com/Azincc/astrbot_plugin_skland/actions/workflows/release.yml/badge.svg)](https://github.com/Azincc/astrbot_plugin_skland/actions/workflows/release.yml)
+[![Build and Release](https://github.com/howrain/astrbot_plugin_skland/actions/workflows/release.yml/badge.svg)](https://github.com/howrain/astrbot_plugin_skland/actions/workflows/release.yml)
 [![AstrBot](https://img.shields.io/badge/AstrBot-Plugin-3b82f6?style=flat-square)](https://github.com/Soulter/AstrBot)
 [![Python](https://img.shields.io/badge/Python-3.10%2B-0ea5e9?style=flat-square)](https://www.python.org/)
 
@@ -58,7 +58,7 @@
 | `/arknights 抽卡分析` | 是 | 统计总抽数、平均六星、UP 占比与六星角色分布 |
 | `/arknights 寻访分析` | 是 | `抽卡分析` 的别名 |
 | `/arknights 公告` | 否 | 查看官方公告列表图片 |
-| `/arknights 公告 1` | 否 | 查看对应公告正文截图 |
+| `/arknights 公告 1` | 否 | 查看对应公告正文渲染图 |
 | `/arknights 刷图推荐` | 否 | 优先截图一图流网站的推荐卡片区域；失败时回退到本地渲染版 |
 | `/arknights 材料掉率` | 否 | 优先截图一图流网站的推荐卡片区域；失败时回退到本地渲染版 |
 | `/arknights 公招查询 支援 远程位` | 否 | 查询公招标签组合；绑定后额外标记已持有 / 未持有 / 满潜 |
@@ -86,43 +86,64 @@
 - 自动签到时间、开关、随机延迟等配置可在 AstrBot 配置页中调整。
 - 若 token 失效，插件会提示重新使用 `/skdlogin` 或 `/skdscan` 绑定。
 
+## 配置说明
+
+目前常用配置项如下：
+
+| 配置项 | 默认值 | 说明 |
+|:--|:--|:--|
+| `auto_sign_enabled` | `true` | 是否开启自动签到 |
+| `auto_sign_hour` | `1` | 自动签到执行小时 |
+| `auto_sign_delay` | `10` | 自动签到随机延迟秒数 |
+| `max_users` | `10` | 最大绑定用户数，`0` 表示不限制 |
+| `render_cache_ttl_seconds` | `3600` | 渲染缓存保留时长，单位秒；默认只保留最近 1 小时的 `render_cache` 文件 |
+
+补充说明：
+
+- `render_cache_ttl_seconds = 3600` 表示保留 1 小时
+- `render_cache_ttl_seconds = 1800` 表示保留 30 分钟
+- `render_cache_ttl_seconds = 0` 表示每次渲染前尽量清理全部旧缓存
+
 ## 效果预览
 
 以下图片由仓库内脚本通过真实接口生成，位于 `docs/preview/`。
+
+为兼容 AstrBot WebUI 的插件说明弹窗，README 中的预览图建议使用 `https://` 绝对地址。
+像 `docs/preview/note.png` 这类相对路径，在 GitHub 中通常可正常显示，但在 AstrBot WebUI 中往往不会自动解析到插件目录，因此会出现图片裂开的情况。
 
 ### 便签与公告
 
 | 便签 | 公告列表 |
 |:--:|:--:|
-| ![note](docs/preview/note.png) | ![announcement-list](docs/preview/announcement-list.png) |
+| <img src="https://raw.githubusercontent.com/howrain/astrbot_plugin_skland/main/docs/preview/note.png" width="360" alt="note"> | <img src="https://raw.githubusercontent.com/howrain/astrbot_plugin_skland/main/docs/preview/announcement-list.png" width="360" alt="announcement-list"> |
 
 | 公告正文 |
 |:--:|
-| ![announcement-1](docs/preview/announcement-1.png) |
+| <img src="https://raw.githubusercontent.com/howrain/astrbot_plugin_skland/main/docs/preview/announcement-1.png" width="720" alt="announcement-1"> |
 
 ### 材料、公招、肉鸽
 
 | 一图流截图版 | 公招查询 |
 |:--:|:--:|
-| ![material](docs/preview/material.png) | ![recruit](docs/preview/recruit.png) |
+| <img src="https://raw.githubusercontent.com/howrain/astrbot_plugin_skland/main/docs/preview/material.png" width="360" alt="material"> | <img src="https://raw.githubusercontent.com/howrain/astrbot_plugin_skland/main/docs/preview/recruit.png" width="360" alt="recruit"> |
 
 | 本地渲染版材料图 |
 |:--:|
-| ![material-render](docs/preview/material-render.png) |
+| <img src="https://raw.githubusercontent.com/howrain/astrbot_plugin_skland/main/docs/preview/material-render.png" width="720" alt="material-render"> |
 
 | 集成战略 |
 |:--:|
-| ![rogue](docs/preview/rogue.png) |
+| <img src="https://raw.githubusercontent.com/howrain/astrbot_plugin_skland/main/docs/preview/rogue.png" width="520" alt="rogue"> |
 
 ### 抽卡记录与分析
 
 | 抽卡记录 | 指定卡池查询 |
 |:--:|:--:|
-| ![gacha](docs/preview/gacha.png) | ![gacha-pool](docs/preview/gacha-pool.png) |
+| <img src="https://raw.githubusercontent.com/howrain/astrbot_plugin_skland/main/docs/preview/gacha.png" width="360" alt="gacha"> | <img src="https://raw.githubusercontent.com/howrain/astrbot_plugin_skland/main/docs/preview/gacha-pool.png" width="360" alt="gacha-pool"> |
 
 | 抽卡分析 |
 |:--:|
-| ![gacha-analysis](docs/preview/gacha-analysis.png) |
+| <img src="https://raw.githubusercontent.com/howrain/astrbot_plugin_skland/main/docs/preview/gacha-analysis.png" width="720" alt="gacha-analysis"> |
 
 ## 安装与依赖
 
@@ -130,7 +151,7 @@
 
 ```bash
 cd AstrBot/data/plugins
-git clone https://github.com/Azincc/astrbot_plugin_skland.git
+git clone https://github.com/howrain/astrbot_plugin_skland.git
 ```
 
 ### 安装浏览器内核
@@ -218,6 +239,7 @@ python scripts/generate_preview.py
 - 拉取明日方舟角色数据
 - 渲染便签、公告、材料、公招、肉鸽、抽卡记录图片
 - 输出测试报告到 `docs/preview/test-report.json`
+- 自动将 README 预览图压缩到更适合文档展示的尺寸
 
 ## 当前已实现的重点能力
 

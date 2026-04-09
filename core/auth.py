@@ -26,15 +26,44 @@ class AuthService:
         return data["data"]["scanId"]
 
     async def get_scan_status(self, scan_id: str) -> str | None:
+        state = await self.get_scan_state(scan_id)
+        if state.get("state") == "done":
+            return state.get("scan_code")
+        return None
+
+    async def get_scan_state(self, scan_id: str) -> dict:
         resp = await self.client.get(
             "https://as.hypergryph.com/general/v1/scan_status",
             params={"scanId": scan_id},
         )
         resp.raise_for_status()
         data = resp.json()
-        if data.get("status") != 0:
-            return None
-        return data.get("data", {}).get("scanCode")
+        payload = data.get("data", {}) or {}
+        scan_code = payload.get("scanCode") or ""
+        if scan_code:
+            return {"state": "done", "scan_code": scan_code, "raw": data}
+
+        state_candidates = [
+            payload.get("status"),
+            payload.get("state"),
+            payload.get("scanStatus"),
+            payload.get("scan_state"),
+            data.get("msg"),
+            data.get("message"),
+        ]
+        normalized = " ".join(str(item).strip().lower() for item in state_candidates if item not in (None, ""))
+
+        if any(keyword in normalized for keyword in ["reject", "denied", "refuse", "cancel", "拒绝", "取消"]):
+            return {"state": "rejected", "scan_code": "", "raw": data}
+        if any(keyword in normalized for keyword in ["expire", "timeout", "过期", "失效", "超时"]):
+            return {"state": "expired", "scan_code": "", "raw": data}
+        if any(keyword in normalized for keyword in ["failed", "error", "invalid", "失败"]):
+            return {"state": "failed", "scan_code": "", "raw": data}
+
+        if data.get("status") == 0:
+            return {"state": "pending", "scan_code": "", "raw": data}
+
+        return {"state": "pending", "scan_code": "", "raw": data}
 
     async def get_token_by_scan_code(self, scan_code: str) -> str:
         resp = await self.client.post(

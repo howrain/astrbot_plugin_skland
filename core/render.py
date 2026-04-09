@@ -3,6 +3,7 @@ from __future__ import annotations
 import asyncio
 import os
 import re
+import time
 import uuid
 from typing import Any
 
@@ -11,9 +12,10 @@ from astrbot.api import logger
 
 
 class Renderer:
-    def __init__(self, res_path: str, render_timeout: int = 30000):
+    def __init__(self, res_path: str, render_timeout: int = 30000, cache_ttl_seconds: int = 3600):
         self.res_path = res_path
         self.render_timeout = render_timeout
+        self.cache_ttl_seconds = max(0, int(cache_ttl_seconds))
         self._browser = None
         self._playwright = None
         self._lock = asyncio.Lock()
@@ -24,8 +26,10 @@ class Renderer:
         )
         self._output_dir = os.path.join(self.res_path, "render_cache")
         os.makedirs(self._output_dir, exist_ok=True)
+        self._cleanup_old_cache()
 
     async def render_html(self, template_name: str, data: dict[str, Any]) -> str | None:
+        self._cleanup_old_cache()
         try:
             template = self._env.get_template(template_name)
             html = template.render(**data)
@@ -36,6 +40,7 @@ class Renderer:
         return await self._screenshot(html, template_name)
 
     async def render_raw_html(self, html: str, name: str = "raw.html") -> str | None:
+        self._cleanup_old_cache()
         return await self._screenshot(html, name)
 
     async def screenshot_url(
@@ -46,6 +51,7 @@ class Renderer:
         full_page: bool = True,
         selector: str | None = None,
     ) -> str | None:
+        self._cleanup_old_cache()
         try:
             from playwright.async_api import async_playwright
         except Exception as exc:
@@ -101,6 +107,7 @@ class Renderer:
         )
 
     async def _screenshot(self, html: str, template_name: str) -> str | None:
+        self._cleanup_old_cache()
         try:
             from playwright.async_api import async_playwright
         except Exception as exc:
@@ -151,6 +158,20 @@ class Renderer:
         finally:
             if os.path.exists(temp_html):
                 os.remove(temp_html)
+
+    def _cleanup_old_cache(self):
+        now = time.time()
+        for name in os.listdir(self._output_dir):
+            if not (name.startswith("render_") or name.startswith("tmp_")):
+                continue
+            path = os.path.join(self._output_dir, name)
+            try:
+                if not os.path.isfile(path):
+                    continue
+                if now - os.path.getmtime(path) > self.cache_ttl_seconds:
+                    os.remove(path)
+            except Exception as exc:
+                logger.warning(f"[Skland Render] 清理缓存失败 {path}: {exc}")
 
     async def close(self):
         if self._browser:

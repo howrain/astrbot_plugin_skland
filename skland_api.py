@@ -443,12 +443,17 @@ class SklandAPI:
         auth_code = await self.get_authorization(user_token)
         return await self.get_credential(auth_code)
 
-    async def get_user_bindings(self, user_token: str) -> list[UserBinding]:
-        cred = await self.get_credential_from_token(user_token)
+    async def _resolve_credential(self, user_token: str, stored_cred: str = "") -> Credential:
+        if stored_cred:
+            return Credential(token=user_token, cred=stored_cred)
+        return await self.get_credential_from_token(user_token)
+
+    async def get_user_bindings(self, user_token: str, stored_cred: str = "") -> list[UserBinding]:
+        cred = await self._resolve_credential(user_token, stored_cred)
         return await self.get_binding_list(cred)
 
-    async def get_arknights_binding(self, user_token: str) -> UserBinding | None:
-        bindings = await self.get_user_bindings(user_token)
+    async def get_arknights_binding(self, user_token: str, stored_cred: str = "") -> UserBinding | None:
+        bindings = await self.get_user_bindings(user_token, stored_cred)
         for binding in bindings:
             if binding.app_code == "arknights":
                 return binding
@@ -462,16 +467,16 @@ class SklandAPI:
             raise Exception(response.get("message", "Unknown error"))
         return response
 
-    async def get_arknights_player_info(self, user_token: str) -> dict:
-        cred = await self.get_credential_from_token(user_token)
-        binding = await self.get_arknights_binding(user_token)
+    async def get_arknights_player_info(self, user_token: str, stored_cred: str = "") -> dict:
+        cred = await self._resolve_credential(user_token, stored_cred)
+        binding = await self.get_arknights_binding(user_token, stored_cred)
         if not binding:
             raise Exception("未找到明日方舟绑定信息")
         url = f"https://zonai.skland.com/api/v1/game/player/info?uid={binding.uid}"
         return await self._signed_get_json(url, cred)
 
-    async def get_game_cards(self, user_token: str) -> dict:
-        cred = await self.get_credential_from_token(user_token)
+    async def get_game_cards(self, user_token: str, stored_cred: str = "") -> dict:
+        cred = await self._resolve_credential(user_token, stored_cred)
         url = "https://zonai.skland.com/api/v1/game/cards"
         return await self._signed_get_json(url, cred)
 

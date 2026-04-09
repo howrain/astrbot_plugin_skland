@@ -83,6 +83,17 @@ def copy_preview(src: str | None, target_name: str) -> str | None:
     PREVIEW_DIR.mkdir(parents=True, exist_ok=True)
     target = PREVIEW_DIR / target_name
     shutil.copyfile(src, target)
+    try:
+        from PIL import Image
+
+        with Image.open(target) as img:
+            max_width = 900
+            max_height = 2200
+            if img.width > max_width or img.height > max_height:
+                img.thumbnail((max_width, max_height))
+                img.save(target, optimize=True)
+    except Exception:
+        pass
     return str(target.relative_to(ROOT)).replace("\\", "/")
 
 

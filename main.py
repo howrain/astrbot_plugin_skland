@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import asyncio
+import base64
 from datetime import datetime
 import os
 import random
@@ -28,11 +29,12 @@ from .skland_api import SklandAPI
 PLUGIN_NAME = "astrbot_plugin_skland"
 
 
-@register(PLUGIN_NAME, "AstrBot", "森空岛自动签到与基础查询插件", "2.0.0")
+@register(PLUGIN_NAME, "AstrBot", "森空岛自动签到与基础查询插件", "2.0.1")
 class SklandPlugin(Star):
     def __init__(self, context: Context, config: AstrBotConfig):
         super().__init__(context)
         self.config = config
+        self._init_config()
         self.api = SklandAPI(max_retries=3)
         self.auth = AuthService()
         self.storage = StorageService(self)
@@ -41,9 +43,12 @@ class SklandPlugin(Star):
         self.gacha_service = GachaService()
         self.material_service = MaterialService()
         self.recruit_service = RecruitService()
-        self.renderer = Renderer(os.path.join(os.path.dirname(__file__), "resources"))
+        render_config = self._get_config()
+        self.renderer = Renderer(
+            os.path.join(os.path.dirname(__file__), "resources"),
+            cache_ttl_seconds=render_config.get("render_cache_ttl_seconds", 3600),
+        )
         self.scheduler = AsyncIOScheduler()
-        self._init_config()
 
     def _init_config(self):
         put_config(
@@ -81,6 +86,13 @@ class SklandPlugin(Star):
             value=10,
             description="允许绑定的最大用户数量，0表示无限制",
         )
+        put_config(
+            namespace=PLUGIN_NAME,
+            name="渲染缓存保留时长（秒）",
+            key="render_cache_ttl_seconds",
+            value=3600,
+            description="render_cache 中图片缓存的保留时长，默认 3600 秒，0 表示每次尽量立即清理旧缓存",
+        )
 
     def _get_config(self) -> dict:
         return {
@@ -89,6 +101,7 @@ class SklandPlugin(Star):
             "show_player_name": self.config.get("show_player_name", True),
             "auto_sign_delay": self.config.get("auto_sign_delay", 10),
             "max_users": self.config.get("max_users", 10),
+            "render_cache_ttl_seconds": self.config.get("render_cache_ttl_seconds", 3600),
         }
 
     async def initialize(self):
@@ -370,9 +383,11 @@ class SklandPlugin(Star):
             with tempfile.NamedTemporaryFile(suffix=".png", delete=False) as tmp:
                 tmp_path = tmp.name
             image.save(tmp_path)
+            with open(tmp_path, "rb") as f:
+                qr_b64 = base64.b64encode(f.read()).decode()
 
             obmsg = [
-                {"type": "image", "data": {"file": f"file:///{tmp_path.replace(os.sep, '/')}"}},
+                {"type": "image", "data": {"file": f"base64://{qr_b64}"}},
                 {
                     "type": "text",
                     "data": {
@@ -394,11 +409,29 @@ class SklandPlugin(Star):
             scan_code = None
             for _ in range(48):
                 await asyncio.sleep(2)
-                scan_code = await self.auth.get_scan_status(scan_id)
-                if scan_code:
+                scan_state = await self.auth.get_scan_state(scan_id)
+                state = scan_state.get("state")
+                if state == "done":
+                    scan_code = scan_state.get("scan_code")
                     break
+                if state in {"expired", "rejected", "failed"}:
+                    if recall_task and not recall_task.done():
+                        recall_task.cancel()
+                    if client and message_id:
+                        await self.message_service.recall_now(client, message_id)
+                    if state == "rejected":
+                        yield event.plain_result("扫码已被拒绝，请重新发送 /skdscan。")
+                    elif state == "expired":
+                        yield event.plain_result("二维码已过期，请重新发送 /skdscan。")
+                    else:
+                        yield event.plain_result("扫码登录失败，请重新发送 /skdscan。")
+                    return
 
             if not scan_code:
+                if recall_task and not recall_task.done():
+                    recall_task.cancel()
+                if client and message_id:
+                    await self.message_service.recall_now(client, message_id)
                 yield event.plain_result("二维码已超时，请重新发送 /skdscan。")
                 return
 
@@ -696,7 +729,9 @@ class SklandPlugin(Star):
                 account = await self.storage.get_primary_account(str(event.get_sender_id()))
                 if account and account.get("token"):
                     try:
-                        player = await self.api.get_arknights_player_info(account["token"])
+                        player = await self.api.get_arknights_player_info(
+                            account["token"], account.get("cred", "")
+                        )
                         mark_map, class_map = self._build_recruit_marks(player.get("data", {}) or {})
                     except Exception:
                         mark_map, class_map = {}, {}
@@ -752,7 +787,7 @@ class SklandPlugin(Star):
             return
 
         try:
-            player = await self.api.get_arknights_player_info(account["token"])
+            player = await self.api.get_arknights_player_info(account["token"], account.get("cred", ""))
             player_data = player.get("data", {})
         except Exception as exc:
             yield event.plain_result(f"获取游戏信息失败：{exc}")
@@ -768,7 +803,7 @@ class SklandPlugin(Star):
             routine = player_data.get("routine", {})
             campaign = player_data.get("campaign", {})
             try:
-                cards = await self.api.get_game_cards(account["token"])
+                cards = await self.api.get_game_cards(account["token"], account.get("cred", ""))
                 card_data = ((cards.get("data", {}) or {}).get("list", [{}])[0] or {}).get("arknights", {})
             except Exception:
                 card_data = {}
@@ -946,7 +981,7 @@ class SklandPlugin(Star):
 
         if action in {"抽卡记录", "寻访记录"}:
             try:
-                binding = await self.api.get_arknights_binding(account["token"])
+                binding = await self.api.get_arknights_binding(account["token"], account.get("cred", ""))
                 if not binding:
                     yield event.plain_result("未找到明日方舟绑定信息。")
                     return
@@ -992,7 +1027,7 @@ class SklandPlugin(Star):
 
         if action in {"抽卡分析", "寻访分析", "抽卡统计", "寻访统计"}:
             try:
-                binding = await self.api.get_arknights_binding(account["token"])
+                binding = await self.api.get_arknights_binding(account["token"], account.get("cred", ""))
                 if not binding:
                     yield event.plain_result("未找到明日方舟绑定信息。")
                     return
