@@ -1,0 +1,116 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>{{ title }}</title>
+  <link rel="stylesheet" href="gacha.css">
+</head>
+<body>
+  <main class="gacha-page">
+    <section class="hero">
+      <div class="hero-title">{{ title }}</div>
+      <div class="hero-user">
+        {% if user.avatar %}
+        <img class="hero-avatar" src="{{ user.avatar }}" alt="{{ user.name }}">
+        {% endif %}
+        <div class="hero-meta">
+          <div class="hero-name">{{ user.name }}</div>
+          <div class="hero-badges">
+            <span class="badge badge-server">{{ user.server_label }}</span>
+            <span class="badge badge-level">LV.{{ user.level }}</span>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <section class="summary-panel">
+      <div class="summary-title">统计信息</div>
+      <div class="summary-grid">
+        {% for item in summary %}
+        <article class="summary-card">
+          <h3>{{ item.label }}</h3>
+          <div class="summary-pulls">{{ item.pulls }}<span>抽</span></div>
+          <div class="summary-stats">
+            <span>{{ item.six }} / {{ item.spook }}</span>
+            <span>{{ item.avg }}</span>
+          </div>
+          <div class="summary-labels">
+            <span>出卡数/歪</span>
+            <span>UP平均</span>
+          </div>
+        </article>
+        {% endfor %}
+      </div>
+      <div class="pity-grid">
+        {% for item in summary %}
+        <article class="pity-card">
+          <h4>{{ item.label }}已垫</h4>
+          <div class="pity-bar">
+            <div class="pity-fill" style="width: {{ item.pity }}%;"></div>
+            <span>{{ item.pity }}/99</span>
+          </div>
+          <div class="pity-rate">当前概率 {{ item.rate }}</div>
+        </article>
+        {% endfor %}
+      </div>
+    </section>
+
+    <section class="pool-list">
+      {% for section in sections %}
+      <article class="pool-card">
+        <div class="pool-header">
+          <div>
+            <div class="pool-name">{{ section.pool_name }}</div>
+            {% if section.up_avatars %}
+            <div class="pool-up-list">
+              {% for avatar in section.up_avatars %}
+              <img src="{{ avatar }}" alt="{{ section.pool_name }}">
+              {% endfor %}
+            </div>
+            {% else %}
+            <div class="pool-type">{{ section.pool_type_label }}</div>
+            {% endif %}
+          </div>
+          <div class="pool-count">{{ section.pool_total }}抽</div>
+        </div>
+
+        {% if section.entries %}
+        <div class="entry-list">
+          {% for entry in section.entries %}
+          <div class="entry-row">
+            <div class="entry-side">
+              <img class="entry-avatar" src="{{ entry.avatar }}" alt="{{ entry.name }}">
+              <div class="entry-date">{{ entry.date }}</div>
+            </div>
+            <div class="entry-main">
+              <div class="entry-bar {{ entry.bar_class }}" style="width: {{ entry.bar_width }}%;">
+                <span>{{ entry.pity_count }} 抽</span>
+              </div>
+              <div class="entry-bottom">
+                <div class="five-stars">
+                  {% for five in entry.five_stars %}
+                  <img src="{{ five.avatar }}" alt="{{ five.name }}" title="{{ five.name }}">
+                  {% endfor %}
+                </div>
+                <div class="entry-tags">
+                  {% if entry.is_new %}<span class="tag">新</span>{% endif %}
+                  {% if entry.is_off_banner %}<span class="tag tag-warn">歪</span>{% endif %}
+                  {% if entry.is_up %}<span class="tag tag-up">UP</span>{% endif %}
+                  {% if entry.is_very_lucky %}<span class="tag tag-lucky">超欧</span>{% endif %}
+                  {% if entry.is_very_unlucky %}<span class="tag tag-bad">超非</span>{% endif %}
+                </div>
+              </div>
+            </div>
+          </div>
+          {% endfor %}
+        </div>
+        {% else %}
+        <div class="pool-empty">该卡池暂无六星记录，当前已垫 {{ section.current_pity }} 抽。</div>
+        {% endif %}
+      </article>
+      {% endfor %}
+    </section>
+  </main>
+</body>
+</html>

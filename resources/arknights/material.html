@@ -1,0 +1,60 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>材料掉率</title>
+  <link rel="stylesheet" href="material.css">
+</head>
+<body>
+  <main class="board">
+    <section class="header">
+      <div>
+        <div class="title-mark">ARKNIGHTS / YITULIU</div>
+        <h1>刷图推荐</h1>
+        <p>本地图文渲染版，按综合效率排序展示全部材料推荐关卡</p>
+      </div>
+      <div class="update-time">更新时间 {{ update_time }}</div>
+    </section>
+
+    <section class="grid">
+      {% for item in items %}
+      <article class="card">
+        <div class="cover">
+          {% if item.icon %}
+          <img src="{{ item.icon }}" alt="{{ item.itemType }}">
+          {% endif %}
+        </div>
+        <div class="content">
+          <div class="item-head">
+            <div class="item-title">
+              {% if item.icon %}
+              <img class="item-icon" src="{{ item.icon }}" alt="{{ item.itemType }}">
+              {% endif %}
+              <span>{{ item.itemType }}</span>
+            </div>
+          </div>
+
+          <div class="stage-list">
+            {% for stage in item.stageResultList %}
+            <div class="stage-row">
+              <div class="stage-left">
+                {% if item.icon %}
+                <img class="stage-icon" src="{{ item.icon }}" alt="{{ item.itemType }}">
+                {% endif %}
+                <div class="stage-main">
+                  <div class="stage-code">{{ stage.stageCode }}</div>
+                  <div class="stage-extra">样本 {{ stage.sampleSize }} | 理智 {{ '%.2f'|format(stage.apExpect|float) }}</div>
+                </div>
+              </div>
+              <div class="stage-rate">{{ '%.1f'|format((stage.stageEfficiency|float) * 100) }}%</div>
+            </div>
+            {% endfor %}
+          </div>
+        </div>
+      </article>
+      {% endfor %}
+    </section>
+  </main>
+</body>
+</html>

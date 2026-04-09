@@ -1,0 +1,37 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>公告详情</title>
+  <link rel="stylesheet" href="announcement-detail.css">
+</head>
+<body>
+  <main class="detail-board">
+    <section class="detail-hero">
+      <div class="hero-mark">HYPERGRYPH / NOTICE</div>
+      <h1>{{ title }}</h1>
+      <div class="hero-meta">
+        <span>{{ date }}</span>
+        <span>{{ author }}</span>
+      </div>
+      {% if brief %}
+      <p class="hero-brief">{{ brief }}</p>
+      {% endif %}
+    </section>
+
+    <section class="detail-body">
+      {% if content_html %}
+      <div class="content">{{ content_html | safe }}</div>
+      {% else %}
+      <div class="content"><p>该公告正文暂时无法解析，已保留原始链接供查看。</p></div>
+      {% endif %}
+    </section>
+
+    <footer class="detail-footer">
+      <span>原始链接</span>
+      <span class="detail-url">{{ url }}</span>
+    </footer>
+  </main>
+</body>
+</html>

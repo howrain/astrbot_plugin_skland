@@ -1,0 +1,43 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>公招查询</title>
+  <link rel="stylesheet" href="recruit.css">
+</head>
+<body>
+  <main class="board recruit-board">
+    <section class="topbar">
+      <div>
+        <div class="eyebrow">PUBLIC RECRUITMENT</div>
+        <h1>公招查询</h1>
+      </div>
+      <div class="tag-belt">
+        {% for tag in tags %}
+        <span>{{ tag }}</span>
+        {% endfor %}
+      </div>
+    </section>
+    {% for group in groups %}
+    <section class="group">
+      <header>
+        <h2>{{ group.star_label }}</h2>
+      </header>
+      <div class="combo-grid">
+        {% for combo in group.combos %}
+        <article class="combo-card">
+          <div class="combo-tags">{{ combo.combo }}</div>
+          <div class="combo-names">
+            {% for op in combo.ops %}
+            <span class="mark-{{ op.mark_class }}">{{ op.name }}{% if op.mark %}[{{ op.mark }}]{% endif %}</span>
+            {% endfor %}
+          </div>
+        </article>
+        {% endfor %}
+      </div>
+    </section>
+    {% endfor %}
+  </main>
+</body>
+</html>

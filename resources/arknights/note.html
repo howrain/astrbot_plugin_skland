@@ -1,0 +1,52 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>便签</title>
+  <link rel="stylesheet" href="note.css">
+</head>
+<body>
+  <main class="board note-board">
+    <section class="profile">
+      <div class="profile-main">
+        <div class="avatar-wrap">
+          {% if doctor.avatar_url %}
+          <img src="{{ doctor.avatar_url }}" alt="avatar">
+          {% else %}
+          <div class="avatar-fallback">{{ doctor.name[:1] }}</div>
+          {% endif %}
+        </div>
+        <div class="profile-copy">
+          <div class="eyebrow">OPERATOR NOTE</div>
+          <h1>{{ doctor.name }}</h1>
+          <p>UID {{ doctor.uid }} · Lv.{{ doctor.level }}</p>
+          <div class="meta-row">
+            <span>注册 {{ doctor.register_date }}</span>
+            <span>主线 {{ doctor.progress }}</span>
+          </div>
+        </div>
+      </div>
+      <div class="clue-strip">
+        {% for clue in clues %}
+        <span class="clue {% if clue.active %}active{% endif %}">{{ clue.label }}</span>
+        {% endfor %}
+      </div>
+      <div class="recruit-strip">
+        {% for item in recruit %}
+        <span class="recruit-chip {% if item.done %}done{% endif %}">{{ item.label }}</span>
+        {% endfor %}
+      </div>
+    </section>
+    <section class="stats-grid">
+      {% for item in stats %}
+      <article class="stat-card">
+        <div class="stat-label">{{ item.label }}</div>
+        <div class="stat-value">{{ item.value }}</div>
+        <div class="stat-sub">{{ item.sub }}</div>
+      </article>
+      {% endfor %}
+    </section>
+  </main>
+</body>
+</html>

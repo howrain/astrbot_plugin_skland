@@ -1,0 +1,95 @@
+{
+  "generated_at": "2026-04-09T18:58:19.518363",
+  "checks": [
+    {
+      "name": "sign_in",
+      "ok": true,
+      "nickname": "博士#114514",
+      "games": [
+        "明日方舟",
+        "终末地"
+      ],
+      "details": [
+        {
+          "game": "明日方舟",
+          "success": false,
+          "error": "请勿重复签到！",
+          "awards": []
+        },
+        {
+          "game": "终末地",
+          "success": false,
+          "error": "请勿重复签到！",
+          "awards": []
+        }
+      ]
+    },
+    {
+      "name": "player_info",
+      "ok": true,
+      "uid": "1145141919810",
+      "nickname": "博士#114514",
+      "char_count": 406
+    },
+    {
+      "name": "render_note",
+      "ok": true,
+      "path": "docs/preview/note.png"
+    },
+    {
+      "name": "announcement_list",
+      "ok": true,
+      "count": 10,
+      "path": "docs/preview/announcement-list.png"
+    },
+    {
+      "name": "announcement_detail",
+      "ok": true,
+      "title": "「人们，我们」创作征集活动",
+      "path": "docs/preview/announcement-1.png"
+    },
+    {
+      "name": "material",
+      "ok": true,
+      "items": 1,
+      "path": "docs/preview/material.png"
+    },
+    {
+      "name": "material_render",
+      "ok": true,
+      "items": 17,
+      "path": "docs/preview/material-render.png"
+    },
+    {
+      "name": "recruit",
+      "ok": true,
+      "groups": 1,
+      "path": "docs/preview/recruit.png"
+    },
+    {
+      "name": "rogue",
+      "ok": true,
+      "records": 5,
+      "path": "docs/preview/rogue.png"
+    },
+    {
+      "name": "gacha",
+      "ok": true,
+      "records": 184,
+      "path": "docs/preview/gacha.png"
+    },
+    {
+      "name": "gacha_pool",
+      "ok": true,
+      "keyword": "辟路之人",
+      "records": 50,
+      "path": "docs/preview/gacha-pool.png"
+    },
+    {
+      "name": "gacha_analysis",
+      "ok": true,
+      "records": 184,
+      "path": "docs/preview/gacha-analysis.png"
+    }
+  ]
+}

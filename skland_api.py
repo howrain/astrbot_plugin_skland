@@ -439,6 +439,42 @@ class SklandAPI:
 
         return bindings
 
+    async def get_credential_from_token(self, user_token: str) -> Credential:
+        auth_code = await self.get_authorization(user_token)
+        return await self.get_credential(auth_code)
+
+    async def get_user_bindings(self, user_token: str) -> list[UserBinding]:
+        cred = await self.get_credential_from_token(user_token)
+        return await self.get_binding_list(cred)
+
+    async def get_arknights_binding(self, user_token: str) -> UserBinding | None:
+        bindings = await self.get_user_bindings(user_token)
+        for binding in bindings:
+            if binding.app_code == "arknights":
+                return binding
+        return None
+
+    async def _signed_get_json(self, url: str, cred: Credential) -> dict:
+        did = await self.get_device_id()
+        headers = self._get_signed_headers(url, "GET", None, cred, did)
+        response = await self._request("GET", url, headers=headers)
+        if response.get("code") != 0:
+            raise Exception(response.get("message", "Unknown error"))
+        return response
+
+    async def get_arknights_player_info(self, user_token: str) -> dict:
+        cred = await self.get_credential_from_token(user_token)
+        binding = await self.get_arknights_binding(user_token)
+        if not binding:
+            raise Exception("未找到明日方舟绑定信息")
+        url = f"https://zonai.skland.com/api/v1/game/player/info?uid={binding.uid}"
+        return await self._signed_get_json(url, cred)
+
+    async def get_game_cards(self, user_token: str) -> dict:
+        cred = await self.get_credential_from_token(user_token)
+        url = "https://zonai.skland.com/api/v1/game/cards"
+        return await self._signed_get_json(url, cred)
+
     async def sign_arknights(self, cred: Credential, binding: UserBinding) -> SignInResult:
         """Sign in for Arknights"""
         did = await self.get_device_id()

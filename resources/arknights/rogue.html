@@ -1,0 +1,41 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>集成战略</title>
+  <link rel="stylesheet" href="rogue.css">
+</head>
+<body>
+  <main class="board rogue-board">
+    <section class="masthead">
+      <div class="tiny">INTEGRATED STRATEGIES</div>
+      <h1>{{ user_name }}</h1>
+      <p>博士编号 {{ uid }}</p>
+    </section>
+    <section class="timeline">
+      {% for item in rogue_list %}
+      <article class="rogue-card">
+        <div class="rogue-cover">
+          {% if item.image %}
+          <img src="{{ item.image }}" alt="{{ item.name }}">
+          {% else %}
+          <div class="rogue-order">{{ loop.index }}</div>
+          {% endif %}
+        </div>
+        <div class="rogue-main">
+          <h2>{{ item.name }}</h2>
+          <div class="stats">
+            <span>投资 {{ item.bankCurrent }}/{{ item.bankRecord }}</span>
+            <span>藏品 {{ item.relicCnt }}</span>
+            <span>通关 {{ item.clearTime }}</span>
+            <span>奖励等级 {{ item.bpLevel }}</span>
+            <span>蚀刻章 {{ item.medalCurrent }}/{{ item.medalTotal }}</span>
+          </div>
+        </div>
+      </article>
+      {% endfor %}
+    </section>
+  </main>
+</body>
+</html>

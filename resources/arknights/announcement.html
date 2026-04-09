@@ -1,0 +1,30 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>公告列表</title>
+  <link rel="stylesheet" href="announcement.css">
+</head>
+<body>
+  <main class="board ann-board">
+    <section class="hero">
+      <div class="hero-mark">HYPERGRYPH / NEWSROOM</div>
+      <h1>公告列表</h1>
+      <p>发送 /arknights 公告 1 查看对应详情链接</p>
+    </section>
+    <section class="ann-list">
+      {% for item in items %}
+      <article class="ann-card">
+        <div class="ann-index">{{ loop.index }}</div>
+        <div class="ann-main">
+          <h2>{{ item.title }}</h2>
+          <div class="ann-date">{{ item.date }}</div>
+          <p>{{ item.url }}</p>
+        </div>
+      </article>
+      {% endfor %}
+    </section>
+  </main>
+</body>
+</html>
